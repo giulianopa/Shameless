@@ -1,14 +1,11 @@
-CPPFLAGS=-Wall -pthread -O3
-LDFLAGS=
-LDLIBS=-lpthread
+mkfile_path = $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir = $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
-meta: meta.o
-	g++ $(LDFLAGS) -o meta meta.o $(LDLIBS)
+metaprogramming: test_meta
+.PHONY: metaprogramming
 
-meta.o: meta.cpp
-	g++ $(CPPFLAGS) -c meta.cpp
+test_meta: test_meta.o
+	g++ $(LDFLAGS) -o $@ $? $(LDLIBS)
 
-.PHONY: clean
-
-clean:
-	rm -f meta *.o
+test_meta.o: ${current_dir}/test_meta.cpp
+	g++ $(CPPFLAGS) -c $<

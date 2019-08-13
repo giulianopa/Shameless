@@ -1,33 +1,20 @@
-CPPFLAGS=-Wall -pthread -O3
-LDFLAGS=
-LDLIBS=-lpthread
+mkfile_path = $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir = $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
-TARGETS=barrier semaphore
-TESTS=test_thread_creation
+concurrency: test_concurrency test_thread_creation
+.PHONY: concurrency
 
-all: ${TARGETS}
+concurrency.o: ${current_dir}/concurrency.cpp
+	g++ $(CPPFLAGS) -c $<
 
-test: ${TESTS}
+test_concurrency: test_concurrency.o concurrency.o
+	g++ $(LDFLAGS) -o $@ $? $(LDLIBS)
 
-barrier: barrier.o
-	g++ $(LDFLAGS) -o barrier barrier.o $(LDLIBS)
+test_concurrency.o: ${current_dir}/test_concurrency.cpp
+	g++ $(CPPFLAGS) -c $<
 
-barrier.o: barrier.cpp
-	g++ $(CPPFLAGS) -c barrier.cpp
+test_thread_creation: test_thread_creation.o concurrency.o
+	g++ $(LDFLAGS) -o $@ $? $(LDLIBS)
 
-semaphore: semaphore.o
-	g++ $(LDFLAGS) -o semaphore semaphore.o $(LDLIBS)
-
-semaphore.o: semaphore.cpp
-	g++ $(CPPFLAGS) -c semaphore.cpp
-
-test_thread_creation: test_thread_creation.o
-	g++ $(LDFLAGS) -o test_thread_creation test_thread_creation.o $(LDLIBS)
-
-test_thread_creation.o: test_thread_creation.cpp
-	g++ $(CPPFLAGS) -c test_thread_creation.cpp
-
-.PHONY: clean
-
-clean:
-	rm -f ${TARGETS} ${TESTS} *.o
+test_thread_creation.o: ${current_dir}/test_thread_creation.cpp
+	g++ $(CPPFLAGS) -c $<

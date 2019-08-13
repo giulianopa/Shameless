@@ -1,3 +1,7 @@
+/*
+* Copyright (C) 2019 Giuliano Pasqualotto (github.com/giulianopa)
+* This code is licensed under MIT license (see LICENSE.txt for details)
+*/
 #include <thread>
 
 using namespace std;
