@@ -36,7 +36,6 @@ private:
   //! Condition variable for the compare and swap of the count.
   std::condition_variable m_cv;
 
-
 public:
   /**
     Default constructor.

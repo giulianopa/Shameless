@@ -4,7 +4,7 @@
 */
 #pragma once
 #include <iostream>
-
+#include <type_traits>
 
 //-----------
 // Fibonacci
@@ -66,4 +66,17 @@ struct CreateList<T, 1, Elems...> {
 
 template<typename T, size_t M>
 struct CreateList<T, M> : CreateList<T, M - 1, M> {
+};
+
+//---------------------------------------
+// Extract types from function signature
+//---------------------------------------
+
+template<typename S>
+struct function_signature;
+
+template<typename R, typename... Args>
+struct function_signature<R(Args...)>{
+    using ret_type = R;
+    using arg_type = std::tuple<Args...>;
 };
