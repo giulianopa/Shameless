@@ -35,11 +35,9 @@ public:
   void postprocess() override { cout << __PRETTY_FUNCTION__ << endl; }
 };
 
-template<>
-struct is_an_algo<double, int, AlgoA> : _is_an_algo<double, int, AlgoA> {
-  static constexpr bool with_preproc = false;
-  static constexpr bool with_postproc = true;
-};
+typedef is_an_algo<AlgoA, double, int, true, true> _config_AlgoA;
+
+typedef is_an_algo<AlgoC, double, int, false, true> _config_AlgoC;
 
 int main(int argc, char** argv) {
   const int VALUE = 8;
