@@ -14,11 +14,15 @@ public:
   virtual void postprocess() {}
 };
 
-template<class Derived, typename I, typename O, bool has_pre, bool has_post>
-struct is_an_algo {
+template<typename I, typename O, class Derived>
+struct _is_an_algo {
   static constexpr bool value = std::is_base_of<GenericAlgo<I, O>, Derived>::value;
-  static constexpr bool with_preproc = value && has_pre;
-  static constexpr bool with_postproc = value && has_post;
+};
+
+template<typename I, typename O, class Derived>
+struct is_an_algo : _is_an_algo<I, O, Derived> {
+  static constexpr bool with_preproc = _is_an_algo<I, O, Derived>::value && false;
+  static constexpr bool with_postproc = _is_an_algo<I, O, Derived>::value && false;
 };
 
 template<typename O, bool has_pre, bool has_post>
@@ -61,5 +65,5 @@ struct algo_selector<O, true, true> {
 
 template<typename T, typename I, typename O>
 void algo_invoker(T &obj, I in, O &out) {
-  out = algo_selector<O, is_an_algo<T>::with_preproc, is_an_algo<T>::with_postproc>::invoke(obj, in);
+  out = algo_selector<O, is_an_algo<I, O, T>::with_preproc, is_an_algo<I, O, T>::with_postproc>::invoke(obj, in);
 }
