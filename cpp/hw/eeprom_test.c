@@ -11,10 +11,6 @@
 	if (!function()) { printf("FAILED\n"); return false; } printf("SUCCEEDED\n");
 #define TEST_FILE_NAME  "eeprom.txt"
 
-// Helper functions
-extern uint32_t eeprom_from_file(const char *file_name);
-extern uint32_t eeprom_to_file(const char *file_name);
-
 // Test cases
 bool test_erase_eeprom(void);
 bool test_read_write_words(void);
@@ -75,7 +71,7 @@ int main(int argc, char *argv[]) {
 					uint8_t page[EEPROM_PAGE_SZ];
 					if (eeprom_read_page(p, page) != EEPROM_PAGE_SZ)
 						break;
-					printf("[p:%u|w:%u] ", p, (p * EEPROM_PAGE_SZ) / EEPROM_WORD_SZ);
+					printf("[p:%u|w:%u] ", p, page_to_addr(p));
 					uint32_t s = 0;
 					for (s = 0; s < EEPROM_PAGE_SZ; s++)
 						printf("%02x,", page[s]);
@@ -120,7 +116,7 @@ int main(int argc, char *argv[]) {
 					uint8_t word[EEPROM_WORD_SZ];
 					if (eeprom_read_word(offset, (uint8_t *)&word) != EEPROM_WORD_SZ)
 						fprintf(stderr, "Cannot write word %u\n", offset);
-					printf("[w:%u] ", offset);
+					printf("[p:%u+%u w:%u] ", addr_to_page(offset), addr_to_page_off(offset), offset);
 					for (uint32_t s = 0; s < EEPROM_WORD_SZ; s++)
 						printf("%02x,", word[s]);
 					printf("\n");
@@ -129,7 +125,7 @@ int main(int argc, char *argv[]) {
 					uint8_t page[EEPROM_PAGE_SZ];
 					if (eeprom_read_page(offset, (uint8_t *)&page) != EEPROM_PAGE_SZ)
 						fprintf(stderr, "Cannot write page %u\n", offset);
-					printf("[p:%u|w:%u] ", offset, (offset * EEPROM_PAGE_SZ) / EEPROM_WORD_SZ);
+					printf("[p:%u|w:%u] ", offset, page_to_addr(offset));
 					for (uint32_t s = 0; s < EEPROM_PAGE_SZ; s++)
 						printf("%02x,", page[s]);
 					printf("\n");

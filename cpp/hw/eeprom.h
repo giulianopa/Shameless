@@ -15,8 +15,23 @@
 #define EEPROM_N_PAGES      (EEPROM_SZ / EEPROM_PAGE_SZ)
 #define EEPROM_ERASE_STATE  0xff
 
+
 /**
-	Read one byte from EEPROM.
+	Load EEPROM content from file to memory.
+	\param[in] file_name Input EEPROM file name.
+	\return Number of bytes read (EEPROM_SZ on success).
+ */
+uint32_t eeprom_from_file(const char *file_name);
+
+/**
+	Write memory content to EEPROM file.
+	\param[in] file_name Output EEPROM file name.
+	\return Number of bytes written (EEPROM_SZ on success).
+ */
+uint32_t eeprom_to_file(const char *file_name);
+
+/**
+	Read one byte from EEPROM (memory buffer).
 	\param[in] offset Zero-based EEPROM offset (word number), in [0, EEPROM_N_WORDS - 1].
 	\param[out] data Output buffer to write to (on success, only).
 	\return Number of bytes read (EEPROM_WORD_SZ on success, 0 otherwise).
@@ -24,7 +39,7 @@
 uint32_t eeprom_read_word(const uint32_t offset, uint8_t *data);
 
 /**
-	Write one byte to EEPROM.
+	Write one byte to EEPROM (memory buffer).
 	\param[in] offset Zero-based EEPROM offset (word number), in [0, EEPROM_N_WORDS - 1].
 	\param[out] data Input buffer to write.
 	\return Number of bytes written (EEPROM_WORD_SZ on success, 0 otherwise).
@@ -32,7 +47,7 @@ uint32_t eeprom_read_word(const uint32_t offset, uint8_t *data);
 uint32_t eeprom_write_word(const uint32_t offset, const uint8_t *data);
 
 /**
-	Read one page from EEPROM.
+	Read one page from EEPROM (memory buffer).
 	\param[in] offset Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
 	\param[out] data Output buffer to write to (on success, only).
 	\return Number of bytes read (EEPROM_PAGE_SZ on success, 0 otherwise).
@@ -40,7 +55,7 @@ uint32_t eeprom_write_word(const uint32_t offset, const uint8_t *data);
 uint32_t eeprom_read_page(const uint32_t offset, uint8_t *data);
 
 /**
-	Write one byte to EEPROM.
+	Write one byte to EEPROM (memory buffer).
 	\param[in] offset Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
 	\param[out] data Input buffer to write.
 	\return Number of bytes written (EEPROM_PAGE_SZ on success, 0 otherwise).
@@ -48,13 +63,13 @@ uint32_t eeprom_read_page(const uint32_t offset, uint8_t *data);
 uint32_t eeprom_write_page(const uint32_t offset, const uint8_t *data);
 
 /**
-	Erase entire EEPROM.
+	Erase entire EEPROM, from memory buffer.
 	\return Number of erased bytes (EEPROM_SZ on success, 0 otherwise).
  */
 uint32_t eeprom_erase(void);
 
 /**
-	Erase one EEPROM page.
+	Erase one EEPROM page, from memory buffer.
 	\param[in] offset Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
 	\return Number of erased bytes (EEPROM_PAGE_SZ on success, 0 otherwise).
  */
@@ -66,6 +81,13 @@ uint32_t eeprom_erase_page(const uint32_t offset);
 static inline uint32_t addr_to_page(const uint32_t addr) {
 	const uint32_t byte_addr = addr * EEPROM_WORD_SZ;
 	return (byte_addr - (byte_addr % EEPROM_PAGE_SZ)) / EEPROM_PAGE_SZ;
+}
+
+/**
+	Convert address (word number) to page offset.
+ */
+static inline uint32_t addr_to_page_off(const uint32_t addr) {
+	return (addr * EEPROM_WORD_SZ) % EEPROM_PAGE_SZ;
 }
 
 /**
