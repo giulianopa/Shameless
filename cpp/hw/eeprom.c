@@ -57,8 +57,8 @@ uint32_t eeprom_from_file(const char *file_name) {
 		return 0;
 	}
 	char * line = NULL;
-  size_t len = 0;
-  ssize_t read = 0;
+	size_t len = 0;
+	ssize_t read = 0;
 	pthread_mutex_lock(&buf_mutex);
 	while (getline(&line, &len, fp) != -1) {
 		char *token = strtok(line, " ,");
