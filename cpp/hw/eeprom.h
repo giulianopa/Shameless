@@ -48,19 +48,19 @@ uint32_t eeprom_write_word(const uint32_t offset, const uint8_t *data);
 
 /**
 	Read one page from EEPROM (memory buffer).
-	\param[in] offset Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
+	\param[in] page Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
 	\param[out] data Output buffer to write to (on success, only).
 	\return Number of bytes read (EEPROM_PAGE_SZ on success, 0 otherwise).
  */
-uint32_t eeprom_read_page(const uint32_t offset, uint8_t *data);
+uint32_t eeprom_read_page(const uint32_t page, uint8_t *data);
 
 /**
 	Write one byte to EEPROM (memory buffer).
-	\param[in] offset Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
+	\param[in] page Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
 	\param[out] data Input buffer to write.
 	\return Number of bytes written (EEPROM_PAGE_SZ on success, 0 otherwise).
  */
-uint32_t eeprom_write_page(const uint32_t offset, const uint8_t *data);
+uint32_t eeprom_write_page(const uint32_t page, const uint8_t *data);
 
 /**
 	Erase entire EEPROM, from memory buffer.
@@ -78,7 +78,7 @@ uint32_t eeprom_erase_page(const uint32_t offset);
 /**
 	Convert address (word number) to page number.
  */
-static inline uint32_t addr_to_page(const uint32_t addr) {
+static inline uint32_t eeprom_addr_to_page(const uint32_t addr) {
 	const uint32_t byte_addr = addr * EEPROM_WORD_SZ;
 	return (byte_addr - (byte_addr % EEPROM_PAGE_SZ)) / EEPROM_PAGE_SZ;
 }
@@ -86,15 +86,39 @@ static inline uint32_t addr_to_page(const uint32_t addr) {
 /**
 	Convert address (word number) to page offset.
  */
-static inline uint32_t addr_to_page_off(const uint32_t addr) {
+static inline uint32_t eeprom_addr_to_page_off(const uint32_t addr) {
 	return (addr * EEPROM_WORD_SZ) % EEPROM_PAGE_SZ;
 }
 
 /**
 	Convert page number to address (word number).
  */
-static inline uint32_t page_to_addr(const uint32_t page) {
+static inline uint32_t eeprom_page_to_addr(const uint32_t page) {
 	return (page * EEPROM_PAGE_SZ);
+}
+
+/**
+	Read one byte from EEPROM (memory buffer).
+	\param[in] page Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
+	\param[in] page_off Zero-based offset within the page, in [0, EEPROM_PAGE_SZ - 1].
+	\param[out] data Output buffer to write to (on success, only).
+	\return Number of bytes read (EEPROM_WORD_SZ on success, 0 otherwise).
+ */
+static inline uint32_t eeprom_read_word_from_page(
+			const uint32_t page, const uint32_t page_off, uint8_t *data) {
+	return eeprom_read_word(eeprom_page_to_addr(page) + page_off, data);
+}
+
+/**
+	Write one byte to EEPROM (memory buffer).
+	\param[in] page Zero-based offset (page number), in [0, EEPROM_N_PAGES - 1].
+	\param[in] page_off Zero-based offset within the page, in [0, EEPROM_PAGE_SZ - 1].
+	\param[out] data Input buffer to write.
+	\return Number of bytes written (EEPROM_WORD_SZ on success, 0 otherwise).
+ */
+static inline uint32_t eeprom_write_word_from_page(
+			const uint32_t page, const uint32_t page_off, const uint8_t *data) {
+	return eeprom_write_word(eeprom_page_to_addr(page) + page_off, data);
 }
 
 #if (EEPROM_WORD_SZ == 1)
