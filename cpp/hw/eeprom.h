@@ -60,6 +60,21 @@ uint32_t eeprom_erase(void);
  */
 uint32_t eeprom_erase_page(const uint32_t offset);
 
+/**
+  Convert address (word number) to page number.
+ */
+static inline uint32_t addr_to_page(const uint32_t addr) {
+  const uint32_t byte_addr = addr * EEPROM_WORD_SZ;
+  return (byte_addr - (byte_addr % EEPROM_PAGE_SZ)) / EEPROM_PAGE_SZ;
+}
+
+/**
+  Convert page number to address (word number).
+ */
+static inline uint32_t page_to_addr(const uint32_t page) {
+  return (page * EEPROM_PAGE_SZ);
+}
+
 #if (EEPROM_WORD_SZ == 1)
 /**
   Read single byte from EEPROM (same as reading a single byte word).
