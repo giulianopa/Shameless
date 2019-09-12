@@ -95,9 +95,9 @@ bool eeprom_write_byte(const uint32_t offset, const uint8_t data);
 
 #if (EEPROM_PAGE_SZ == 4)
 /**
-	Read single byte from EEPROM (same as reading a single byte word).
+	Read 4 bytes from EEPROM (same as reading a 4 bytes page).
 	\param[in] offset EEPROM byte number, in [0, EEPROM_SZ - 1].
-	\param[out] data Output byte.
+	\param[out] data Output unsigned integer.
 	\return True on success, false otherwise.
  */
 static inline bool eeprom_read_uint(const uint32_t offset, uint32_t *data) {
@@ -105,9 +105,9 @@ static inline bool eeprom_read_uint(const uint32_t offset, uint32_t *data) {
 }
 
 /**
-	Write single byte from EEPROM (same as reading a single byte word).
+	Write 4 bytes from EEPROM (same as reading a 4 bytes page).
 	\param[in] offset EEPROM byte number, in [0, EEPROM_SZ - 1].
-	\param[out] data Input byte.
+	\param[out] data Input unsigned integer.
 	\return True on success, false otherwise.
  */
 static inline bool eeprom_write_uint(const uint32_t offset, const uint32_t data) {
