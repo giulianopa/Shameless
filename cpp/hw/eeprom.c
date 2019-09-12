@@ -1,0 +1,128 @@
+/*
+* Copyright (C) 2019 Giuliano Pasqualotto (github.com/giulianopa)
+* This code is licensed under MIT license (see LICENSE.txt for details)
+*/
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include "eeprom.h"
+
+// Check EEPROM offset
+#define CHECK_OFFSET(offset) if (offset < 0 || offset >= EEPROM_SZ) return 0;
+
+// Check word address
+#define CHECK_WORD_ADDR(addr) CHECK_OFFSET(addr * EEPROM_WORD_SZ)
+
+// Check page address
+#define CHECK_PAGE_ADDR(addr) CHECK_OFFSET(addr * EEPROM_PAGE_SZ)
+
+// EEPROM memory buffer
+static uint8_t eeprom[EEPROM_SZ];
+
+// Format: <page_id> <byte_0><byte_1>...<byte_$(EEPROM_PAGE_SZ - 1)>
+uint32_t eeprom_from_file(const char *file_name) {
+	if (!eeprom_erase())
+		return 0;
+
+	// Parse file, line by line.
+	FILE *fp = NULL;
+	fp = fopen(file_name, "r");
+	if (!fp)
+		return 0;
+	char * line = NULL;
+  size_t len = 0;
+  ssize_t read = 0;
+	while (getline(&line, &len, fp) != -1) {
+		char *token = strtok(line, " ,");
+		if (!token)
+			break;
+
+		// Parse page number
+		uint32_t page_addr = atoi(token);
+		CHECK_PAGE_ADDR(page_addr);
+		token = strtok(NULL, " ,");
+		if (!token)
+			break;
+		uint32_t s = 0;
+		for (s = 0; s < EEPROM_PAGE_SZ && token != NULL; s++, token = strtok(NULL, " ,")) {
+			sscanf(token, "%2hhx", &eeprom[page_addr * EEPROM_PAGE_SZ + s])	;
+			read++;
+		}
+	}
+	fclose(fp);
+	return read;
+}
+// Format: <page_id> <byte_0><byte_1>...<byte_$(EEPROM_PAGE_SZ - 1)>
+uint32_t eeprom_to_file(const char *file_name) {
+	FILE *fp = NULL;
+	fp = fopen(file_name, "w");
+	if (!fp)
+		return 0;
+
+	// Write one page per line
+	uint32_t i = 0, s = 0, written = 0;
+	uint8_t page[EEPROM_PAGE_SZ];
+	for (i = 0; i < EEPROM_N_PAGES; i++) {
+		if (eeprom_read_page(i, page) != EEPROM_PAGE_SZ)
+			break;
+		fprintf(fp, "%d ", i);
+		for (s = 0; s < EEPROM_PAGE_SZ; s++) {
+			fprintf(fp, "%02x,", page[s]);
+			written++;
+		}
+		fprintf(fp, "\n");
+	}
+	fclose(fp);
+	return written;
+}
+
+uint32_t eeprom_read_word(const uint32_t offset, uint8_t *data) {
+	CHECK_WORD_ADDR(offset);
+	memcpy(data, eeprom + (EEPROM_WORD_SZ * offset), EEPROM_WORD_SZ);
+	return EEPROM_WORD_SZ;
+}
+
+uint32_t eeprom_write_word(const uint32_t offset, const uint8_t *data) {
+	CHECK_WORD_ADDR(offset);
+	memcpy(eeprom + (EEPROM_WORD_SZ * offset), data, EEPROM_WORD_SZ);
+	return EEPROM_WORD_SZ;
+}
+
+uint32_t eeprom_read_page(const uint32_t offset, uint8_t *data) {
+	CHECK_PAGE_ADDR(offset);
+	memcpy(data, eeprom + (EEPROM_PAGE_SZ * offset), EEPROM_PAGE_SZ);
+	return EEPROM_PAGE_SZ;
+}
+
+uint32_t eeprom_write_page(const uint32_t offset, const uint8_t *data) {
+	CHECK_PAGE_ADDR(offset);
+	memcpy(eeprom + (EEPROM_PAGE_SZ * offset), data, EEPROM_PAGE_SZ);
+	return EEPROM_PAGE_SZ;
+}
+
+uint32_t eeprom_erase(void) {
+	memset(eeprom, EEPROM_ERASE_STATE, EEPROM_SZ);
+	return EEPROM_SZ;
+}
+
+uint32_t eeprom_erase_page(const uint32_t offset) {
+	CHECK_PAGE_ADDR(offset);
+	memset(eeprom + (EEPROM_PAGE_SZ * offset), EEPROM_ERASE_STATE, EEPROM_PAGE_SZ);
+	return EEPROM_PAGE_SZ;
+}
+
+#if (EEPROM_WORD_SZ == 1)
+bool eeprom_read_byte(const uint32_t offset, uint8_t *data) {
+	if (offset >= EEPROM_SZ)
+		return false;
+	*data = eeprom[offset];
+	return true;
+}
+
+bool eeprom_write_byte(const uint32_t offset, const uint8_t data) {
+	if (offset >= EEPROM_SZ)
+		return false;
+	eeprom[offset] = data;
+	return true;
+}
+#endif
