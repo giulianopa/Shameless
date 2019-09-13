@@ -1,14 +1,14 @@
 mkfile_path = $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir = $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
-hw: eeprom_test
+hw: test_eeprom
 .PHONY: hw
 
-eeprom_test: eeprom_test.o eeprom.o
+test_eeprom: test_eeprom.o eeprom.o
 	g++ $(LDFLAGS) -o $@ $? $(LDLIBS)
 
 eeprom.o: ${current_dir}/eeprom.c
 	g++ -x c $(CPPFLAGS) -c $<
 
-eeprom_test.o: ${current_dir}/eeprom_test.c
+test_eeprom.o: ${current_dir}/test_eeprom.c
 	g++ -x c $(CPPFLAGS) -c $<
