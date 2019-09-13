@@ -126,7 +126,6 @@ int main(int argc, char *argv[]) {
 						fprintf(stderr, "Cannot write %u bytes @ %u\n", len, offset);
 					printf("%u bytes written\n", len);
 					free(buf);
-					printf("\n");
 				}
 			}
 			break;
@@ -414,7 +413,7 @@ bool test_read_write(void) {
 		return false;
 	}
 	for (uint32_t i = 0; i < len; i++) {
-		if (buf[i] != i % 0xff + 1) {
+		if (buf[i] != i % 0xff) {
 			free(buf);
 			return false;
 		}
