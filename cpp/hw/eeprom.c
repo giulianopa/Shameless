@@ -125,18 +125,18 @@ uint32_t eeprom_write_word(const uint32_t offset, const uint8_t *data) {
 	return EEPROM_WORD_SZ;
 }
 
-uint32_t eeprom_read_page(const uint32_t offset, uint8_t *data) {
-	CHECK_PAGE_ADDR(offset);
+uint32_t eeprom_read_page(const uint32_t page, uint8_t *data) {
+	CHECK_PAGE_ADDR(page);
 	pthread_mutex_lock(&buf_mutex);
-	memcpy(data, eeprom + (EEPROM_PAGE_SZ * offset), EEPROM_PAGE_SZ);
+	memcpy(data, eeprom + (EEPROM_PAGE_SZ * page), EEPROM_PAGE_SZ);
 	pthread_mutex_unlock(&buf_mutex);
 	return EEPROM_PAGE_SZ;
 }
 
-uint32_t eeprom_write_page(const uint32_t offset, const uint8_t *data) {
-	CHECK_PAGE_ADDR(offset);
+uint32_t eeprom_write_page(const uint32_t page, const uint8_t *data) {
+	CHECK_PAGE_ADDR(page);
 	pthread_mutex_lock(&buf_mutex);
-	memcpy(eeprom + (EEPROM_PAGE_SZ * offset), data, EEPROM_PAGE_SZ);
+	memcpy(eeprom + (EEPROM_PAGE_SZ * page), data, EEPROM_PAGE_SZ);
 	pthread_mutex_unlock(&buf_mutex);
 	return EEPROM_PAGE_SZ;
 }
@@ -148,12 +148,84 @@ uint32_t eeprom_erase(void) {
 	return EEPROM_SZ;
 }
 
-uint32_t eeprom_erase_page(const uint32_t offset) {
-	CHECK_PAGE_ADDR(offset);
+uint32_t eeprom_erase_page(const uint32_t page) {
+	CHECK_PAGE_ADDR(page);
 	pthread_mutex_lock(&buf_mutex);
-	memset(eeprom + (EEPROM_PAGE_SZ * offset), EEPROM_ERASE_STATE, EEPROM_PAGE_SZ);
+	memset(eeprom + (EEPROM_PAGE_SZ * page), EEPROM_ERASE_STATE, EEPROM_PAGE_SZ);
 	pthread_mutex_unlock(&buf_mutex);
 	return EEPROM_PAGE_SZ;
+}
+
+uint32_t eeprom_read(const uint32_t addr, uint8_t *data, const uint32_t len) {
+	CHECK_OFFSET(addr + len - 1);
+
+	// Read first words, getting to the beginning of the next page
+	uint32_t bytes_left = len, tot_read = 0, curr_addr = addr;
+	uint32_t next_page = eeprom_addr_to_page(addr) + 1;
+	const uint32_t next_page_addr = eeprom_page_to_addr(next_page);
+	while (bytes_left > 0 && curr_addr < next_page_addr) {
+		uint32_t bytes_read = eeprom_read_word(curr_addr++, data + tot_read);
+		if (bytes_read != EEPROM_WORD_SZ)
+			return tot_read + bytes_read;
+		tot_read += bytes_read;
+		bytes_left -= bytes_read;
+	}
+
+	// Read entire pages
+	while (bytes_left >= EEPROM_PAGE_SZ) {
+		uint32_t bytes_read = eeprom_read_page(next_page++, data + tot_read);
+		tot_read += bytes_read;
+		if (bytes_read != EEPROM_PAGE_SZ)
+			return tot_read;
+		bytes_left -= bytes_read;
+	}
+
+	// Read reamaining words
+	curr_addr = eeprom_page_to_addr(next_page);
+	while (bytes_left > 0) {
+		uint32_t bytes_read = eeprom_read_word(curr_addr++, data + tot_read);
+		tot_read += bytes_read;
+		if (bytes_read != EEPROM_WORD_SZ)
+			return tot_read;
+		bytes_left -= bytes_read;
+	}
+	return tot_read;
+}
+
+uint32_t eeprom_write(const uint32_t addr, const uint8_t *data, const uint32_t len) {
+	CHECK_OFFSET(addr + len - 1);
+
+	// Read first words, getting to the beginning of the next page
+	uint32_t bytes_left = len, tot_written = 0, curr_addr = addr;
+	uint32_t next_page = eeprom_addr_to_page(addr) + 1;
+	const uint32_t next_page_addr = eeprom_page_to_addr(next_page);
+	while (bytes_left > 0 && curr_addr < next_page_addr) {
+		uint32_t bytes_read = eeprom_write_word(curr_addr++, data + tot_written);
+		if (bytes_read != EEPROM_WORD_SZ)
+			return tot_written + bytes_read;
+		tot_written += bytes_read;
+		bytes_left -= bytes_read;
+	}
+
+	// Read entire pages
+	while (bytes_left >= EEPROM_PAGE_SZ) {
+		uint32_t bytes_read = eeprom_write_page(next_page++, data + tot_written);
+		tot_written += bytes_read;
+		if (bytes_read != EEPROM_PAGE_SZ)
+			return tot_written;
+		bytes_left -= bytes_read;
+	}
+
+	// Read reamaining words
+	curr_addr = eeprom_page_to_addr(next_page);
+	while (bytes_left > 0) {
+		uint32_t bytes_read = eeprom_write_word(curr_addr++, data + tot_written);
+		tot_written += bytes_read;
+		if (bytes_read != EEPROM_WORD_SZ)
+			return tot_written;
+		bytes_left -= bytes_read;
+	}
+	return tot_written;
 }
 
 #if (EEPROM_WORD_SZ == 1)

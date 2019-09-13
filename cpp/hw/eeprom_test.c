@@ -16,12 +16,16 @@ bool test_erase_eeprom(void);
 bool test_read_write_words(void);
 bool test_read_write_pages(void);
 bool test_erase_page(void);
+bool test_addr_conversion(void);
+bool test_read_write(void);
 
 // Test entry point
 bool test_eeprom(void) {
 	TEST_AND_CHECK(test_erase_eeprom);
 	TEST_AND_CHECK(test_read_write_pages);
 	TEST_AND_CHECK(test_read_write_words);
+	TEST_AND_CHECK(test_addr_conversion);
+	TEST_AND_CHECK(test_read_write);
 	return true;
 }
 
@@ -32,7 +36,7 @@ int main(int argc, char *argv[]) {
 
 	// REPL
 	char option = 0;
-	printf("\n------------------------------------------\n");
+	printf("------------------------------------------\n");
 	printf(" EEPROM Test \n");
 	do {
 		printf("------------------------------------------\n");
@@ -42,8 +46,8 @@ int main(int argc, char *argv[]) {
 		printf(" t. Run unit tests (will erase EEPROM).\n");
 		printf(" q. Save and quit.\n");
 		printf(" s. Save EEPROM content to file.\n");
-		printf(" r. Read page or word from a given offset (`r [p|w] <off>`).\n");
-		printf(" w. Write page or word to a given offset (`w [p|w] <off> <hex>`).\n");
+		printf(" r. Read page or word from a given offset (`r [p|w|a] <off|len>`).\n");
+		printf(" w. Write page or word to a given offset (`w [p|w|a] <off|len> <hex>`).\n");
 		printf("Enter an option: ");
 		scanf(" %c", &option);
 		printf("------------------------------------------\n");
@@ -56,10 +60,12 @@ int main(int argc, char *argv[]) {
 				if (offset == 0) {
 					if (eeprom_erase() != EEPROM_SZ)
 						fprintf(stderr, "Could not erase\n");
+					printf("%u bytes erased\n", EEPROM_SZ);
 				}
 				else {
-						if (eeprom_erase_page(offset) != EEPROM_PAGE_SZ)
-							fprintf(stderr, "Could not erase page %u\n", offset);
+					if (eeprom_erase_page(offset) != EEPROM_PAGE_SZ)
+						fprintf(stderr, "Could not erase page %u\n", offset);
+					printf("%u bytes erased\n", EEPROM_PAGE_SZ);
 				}
 			}
 			break;
@@ -96,6 +102,7 @@ int main(int argc, char *argv[]) {
 						scanf("%02hhx", &word[i]);
 					if (eeprom_write_word(offset, (uint8_t *)&word) != EEPROM_WORD_SZ)
 						fprintf(stderr, "Cannot write word %u\n", offset);
+					printf("%u bytes written\n", (uint32_t)EEPROM_WORD_SZ);
 				}
 				else if  (type == 'p') {
 					uint8_t page[EEPROM_PAGE_SZ];
@@ -103,6 +110,23 @@ int main(int argc, char *argv[]) {
 						scanf("%02hhx", &page[i]);
 					if (eeprom_write_page(offset, (uint8_t *)&page) != EEPROM_PAGE_SZ)
 						fprintf(stderr, "Cannot write page %u\n", offset);
+					printf("%u bytes written\n", (uint32_t)EEPROM_PAGE_SZ);
+				}
+				else if (type == 'a') {;
+					uint32_t len = 0;
+					scanf(" %u", &len);
+					if (len < 0) {
+						fprintf(stderr, "Invalid length %u\n", len);
+						break;
+					}
+					uint8_t *buf = (uint8_t *)malloc(len);
+					for (uint32_t i = 0; i < len; i++)
+						scanf("%02hhx", &buf[i]);
+					if (eeprom_write(offset, buf, len) != len)
+						fprintf(stderr, "Cannot write %u bytes @ %u\n", len, offset);
+					printf("%u bytes written\n", len);
+					free(buf);
+					printf("\n");
 				}
 			}
 			break;
@@ -129,6 +153,25 @@ int main(int argc, char *argv[]) {
 					printf("[p:%u|w:%u] ", offset, eeprom_page_to_addr(offset));
 					for (uint32_t s = 0; s < EEPROM_PAGE_SZ; s++)
 						printf("%02x,", page[s]);
+					printf("\n");
+				}
+				else if (type == 'a') {;
+					uint32_t len = 0;
+					scanf(" %u", &len);
+					if (len < 0) {
+						fprintf(stderr, "Invalid length %u\n", len);
+						break;
+					}
+					uint8_t *buf = (uint8_t *)malloc(len);
+					memset(buf, 0, len);
+					if (eeprom_read(offset, buf, len) != len)
+						fprintf(stderr, "Cannot read %u bytes @ %u\n", len, offset);
+					printf("[p:%u+%u w:%u] ", eeprom_addr_to_page(offset),
+										eeprom_addr_to_page_off(offset), offset);
+					for (uint32_t s = 0; s < len; s++) {
+						printf("%02x,", buf[s]);
+					}
+					free(buf);
 					printf("\n");
 				}
 			}
@@ -313,5 +356,71 @@ bool test_erase_page(void) {
 	}
 
 	// Success
+	return true;
+}
+
+// Convert a series of pages and addresses
+bool test_addr_conversion(void) {
+	if (eeprom_addr_to_page(EEPROM_N_WORDS - 1) != (EEPROM_N_PAGES - 1))
+		return false;
+	if (eeprom_addr_to_page_off(EEPROM_N_WORDS - 1) != ((EEPROM_PAGE_SZ / EEPROM_WORD_SZ) - 1))
+		return false;
+	if (eeprom_addr_to_page_off(0) != 0)
+		return false;
+
+	// Convert random page, add random offset to corresponding address
+	uint32_t page_no = rand() % EEPROM_N_PAGES;
+	uint32_t addr = eeprom_page_to_addr(page_no);
+	if ((page_no * EEPROM_PAGE_SZ) != (addr * EEPROM_WORD_SZ))
+		return false;
+	uint32_t off = rand() % (EEPROM_PAGE_SZ / EEPROM_WORD_SZ);
+	addr += off;
+	if (eeprom_addr_to_page(addr) != page_no)
+		return false;
+	if (eeprom_addr_to_page_off(addr) != off)
+		return false;
+
+	// Success
+	return true;
+}
+
+// Read/Write using higher level functions
+bool test_read_write(void) {
+	uint32_t addr = rand() % EEPROM_N_WORDS;
+	uint32_t len = rand() % (EEPROM_N_WORDS - addr) + 1;
+	uint8_t *buf = (uint8_t *)malloc(len);
+	memset(buf, 0, len);
+
+	// Try to write one byte over the boundary
+	if (eeprom_write(addr, buf, (EEPROM_N_WORDS - addr) + 1) != 0) {
+		free(buf);
+		return false;
+	}
+	if (eeprom_write(addr, buf, 0) != 0) {
+		free(buf);
+		return false;
+	}
+
+	// Write and then read back
+	for (uint32_t i = 0; i < len; i++)
+		buf[i] = i % 0xff;
+	if (eeprom_write(addr, buf, len) != len) {
+		free(buf);
+		return false;
+	}
+	memset(buf, 0, len);
+	if (eeprom_read(addr, buf, len) != len) {
+		free(buf);
+		return false;
+	}
+	for (uint32_t i = 0; i < len; i++) {
+		if (buf[i] != i % 0xff + 1) {
+			free(buf);
+			return false;
+		}
+	}
+
+	// Success
+	free(buf);
 	return true;
 }
