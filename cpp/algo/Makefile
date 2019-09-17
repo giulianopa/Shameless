@@ -1,7 +1,7 @@
-mkfile_path = $(abspath $(lastword $(MAKEFILE_LIST)))
-current_dir = $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
-algo: test_tensor
+algo: # Had to remove it from repo... :-( test_tensor
 .PHONY: metaprogramming
 
 test_tensor: tensor.o

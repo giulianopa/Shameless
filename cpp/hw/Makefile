@@ -1,5 +1,5 @@
-mkfile_path = $(abspath $(lastword $(MAKEFILE_LIST)))
-current_dir = $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
 hw: test_eeprom
 .PHONY: hw

@@ -1,5 +1,5 @@
-mkfile_path = $(abspath $(lastword $(MAKEFILE_LIST)))
-current_dir = $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
+mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
+current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
 concurrency: test_concurrency test_thread_creation
 .PHONY: concurrency
