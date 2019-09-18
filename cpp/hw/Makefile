@@ -8,7 +8,7 @@ test_eeprom: test_eeprom.o eeprom.o
 	g++ $(LDFLAGS) -o $@ $? $(LDLIBS)
 
 eeprom.o: ${current_dir}/eeprom.c
-	g++ -x c $(CPPFLAGS) -c $<
+	g++ $(CFLAGS) -c $<
 
 test_eeprom.o: ${current_dir}/test_eeprom.c
-	g++ -x c $(CPPFLAGS) -c $<
+	g++ $(CFLAGS) -c $<
