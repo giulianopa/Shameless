@@ -1,16 +1,16 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
-roi: test_roi_1 gen_shell
+roi: test_overflow gen_shell
 .PHONY: roi
 
-test_roi_1: test_roi_1.o
+test_overflow: test_overflow.o
 	g++ $(LDFLAGS) -o $@ $? $(LDLIBS)
 
-test_roi_1_disassemble: ${current_dir}/test_roi_1.c
+test_overflow_disassemble: ${current_dir}/test_overflow.c
 	gcc -S -o $@.s $<
 
-test_roi_1.o: ${current_dir}/test_roi_1.c
+test_overflow.o: ${current_dir}/test_overflow.c
 	g++ -fno-stack-protector $(CFLAGS) -c $<
 
 gen_shell: gen_shell.o

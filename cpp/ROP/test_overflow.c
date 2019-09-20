@@ -29,6 +29,7 @@ RBP: base pointer to current stack frame.
 RSP pointer to the top of the stack.
 CFA: Canonical Frame Address
 RAX: Return register
+RDI: Register destination index
 
 vulnerable:
 .LFB7:
